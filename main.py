@@ -5,6 +5,8 @@ import time
 import random
 from telebot import types
 from prsaw import RandomStuff
+from prawcore.exceptions import ResponseException
+
 
 #PRSAW
 rs = RandomStuff()
@@ -15,23 +17,30 @@ api_key = os.environ['Tele_API_key']
 bot = telebot.TeleBot(api_key)
 
 #PRAW API
-reddit = praw.Reddit(client_id = os.environ['Reddit_client_id'],
-					client_secret = os.environ['Reddit_client_secret'],
-					username = os.environ['Reddit_usr'],
-					password = os.environ['Reddit_pass'],
-					user_agent = os.environ['Reddit_usr_agent'])
+try:
+	reddit = praw.Reddit(client_id = os.environ['Reddit_client_ID'],
+						client_secret = os.environ['Reddit_client_secret'],
+						username = os.environ['Reddit_usr'],
+						password = os.environ['Reddit_pass'],
+						user_agent = 'howdy'
+						)
 
-top_original_memes = reddit.subreddit("memes").top(limit = 100)
-top_programming_memes = reddit.subreddit("ProgrammerHumor").top(limit = 100)
+	top_original_memes = reddit.subreddit("memes").top(limit = 100)
+	top_programming_memes = reddit.subreddit("ProgrammerHumor").top(limit = 100)
+
+	meme_post_list = []
+	for submission in top_original_memes:
+		meme_post_list.append(submission)
+
+	programming_meme_post = []
+	for submission in top_programming_memes:
+		programming_meme_post.append(submission)
+
+except ResponseException:
+	print("Something went wrong during authentication")
 
 
-meme_post_list = []
-for submission in top_original_memes:
-	meme_post_list.append(submission)
 
-programming_meme_post = []
-for submission in top_programming_memes:
-	programming_meme_post.append(submission)
 
 
 #telebot
@@ -137,29 +146,34 @@ def Memes(message):
 	elif message.text == "Original Memes":
 		try:
 			random_post = random.choice(meme_post_list)
+
+			name = random_post.title
+			url = random_post.url
+
+			bot.send_photo(message.chat.id, url,caption = name)
 		except Exception:
 			keyboard = telebot.types.InlineKeyboardMarkup()
 			keyboard.add(telebot.types.InlineKeyboardButton('Message the developer',url = 'telegram.me/pythonnotfound'))
-			bot.send_message(message.chat.id,"Bot broke, Try again later or message the developer",reply_markup=keyboard)
+			bot.send_message(message.chat.id,"Cannot send memes for the time being \nReason: Reddit API Authentication error",reply_markup=keyboard)
 
-		name = random_post.title
-		url = random_post.url
 
-		bot.send_photo(message.chat.id, url,caption = name)
+
+		
 
 	elif message.text == "Programming Memes":
 		try:
 			random_post = random.choice(programming_meme_post)
 		
+			name = random_post.title
+			url = random_post.url
+
+			bot.send_photo(message.chat.id, url,caption = name)
+
 		except Exception:
 			keyboard = telebot.types.InlineKeyboardMarkup()
 			keyboard.add(telebot.types.InlineKeyboardButton('Message the developer',url = 'telegram.me/pythonnotfound'))
-			bot.send_message(message.chat.id,"Bot broke, Try again later or message the developer",reply_markup=keyboard)
+			bot.send_message(message.chat.id,"Cannot send memes for the time being \nReason: Reddit API Authentication error",reply_markup=keyboard)
 		
-		name = random_post.title
-		url = random_post.url
-
-		bot.send_photo(message.chat.id, url,caption = name)
 
 	elif message.text == "Username":
 		try:
